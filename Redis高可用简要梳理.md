@@ -84,7 +84,7 @@ proxy无状态，codis-server分为组间，每个组存在一个主节点（必
 ### 主要工作方式
 分布式的逻辑和存储引擎不分开，即又负责读写操作，又负责集群交互，升级困难，如果代码有bug，集群无法工作
 这个结构为无中心的组织，不好把控集群当前的存活状态，客户端可以向任一节点发送请求，再有其重定向正确的节点上。如果在第一次请求和重定向期间cluster拓扑结构改变，则需要再一次或者多次重定向至正确的节点，但是这方面性能可以忽悠不计  
-整个集群分为16384个哈希槽，分片算法位SlotId = crc16(key) % 16384，增减节点不需要重启服务
+整个集群分为16384个哈希槽，分片算法位SlotId = crc16(key) % 16384，增减节点不需要重启服务。Redis 集群通过 Gossip 协议同步节点信息，基本思想是节点之间互相交换信息最终所有节点达到一致。BTW. redis sentinel集群判定redis主节点down掉也是采用gossip协议。关于Gossip参考[wiki](https://en.wikipedia.org/wiki/Gossip_protocol)。
 
 ![redis-cluster](http://7xorjs.com1.z0.glb.clouddn.com/redis-cluster.png)
 
