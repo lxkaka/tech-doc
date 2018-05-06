@@ -131,7 +131,7 @@ Amazon RDS 监控只读副本的复制状态，如果由于任何原因停止复
 sql> SELECT COUNT(*) AS `__count` FROM `core_membership` WHERE (`core_membership`.`business_group_id` = 2708 AND `core_membership`.`level` > 1)
 [2018-05-04 13:17:16] 1 row retrieved starting from 1 in 598ms (execution: 587ms, fetching: 11ms)
   ```
-  **优化方案**：level大于1的会员为少数，最简单有效的方法就是只查询高等级的会员，这样查询索引的时候自然就快。然后再用总数跟高等级的人数做减法，来避免level 1的查询
+  **优化方案**：level大于1的会员为少数，最简单有效的方法就是只查询高等级的会员，这样查询索引的时候自然就快。然后再用总数跟高等级的人数做减法，来避免level 1的查询
   下图是优化后的主库CPU占用曲线图，可以看到优化后峰值明显减少
   
   ![opt-query](http://7xorjs.com1.z0.glb.clouddn.com/opt-query.png)
