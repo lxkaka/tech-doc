@@ -1,10 +1,10 @@
 ## AWS RDS主从同步延迟调查
 ### 背景
-我们的关系型数据库用的是AWS的RDS，mysql主从延迟这个问题之前是知道的，简单怀疑是AWS的主从同步机制问题但是一直没有重视起来去研究一下问题的根源。终于，隐患暴露处来--- 一次`alter table`和主从延迟曾大发生的时间点重合，从而加剧主从延迟。造成从库远远落后于主库，而数据不一致。必须找到延迟过大的根本原因，解决这个问题。
+我们的关系型数据库用的是AWS的RDS，mysql主从延迟这个问题之前是知道的，简单怀疑是AWS的主从同步机制问题但是一直没有重视起来去研究一下问题的根源。终于，隐患暴露处来--- 一次`alter table`和主从延迟曾大发生的时间点重合，从而加剧主从延迟。造成从库远远落后于主库，而数据不一致。必须找到延迟过大的根本原因，解决这个问题。
 在分析问题之前我们先简要介绍一下mysql主从同步机制
 ### [主从同步机制](https://dev.mysql.com/doc/refman/5.6/en/replication-implementation-details.html)
 mysql在主库上记录binlog。在准备提交事务完成数据更新前，主库把数据更新的事件记录到binlog中。
-mysql通过上面说的binlog用3个线程来实现主从同步，master上的`Binlog Dump Thread`, slave上的`Slave I/O Thread`和`Slave SQL Thread`
+mysql通过上面说的binlog用3个线程来实现主从同步，master上的`Binlog Dump Thread`, slave上的`Slave I/O Thread`和`Slave SQL Thread`
 
   * Slave I/O Thread: I/O线程跟主库建立一个普通的客户端连接，并请求从指定日志文件的指定位置（或者从最开始的日志）之后的日志内容, 存到relaylog中, 然后将读取到的主库binlog的文件名和位置记录到master-info文件中
   * Binlog Dump Thread: 读取主库上的binlog中的事件，根据请求信息读取制定日志指定位置之后的日志信息，返回给`Slave I/O Thread`。返回信息中除了日志所包含的信息之外，还包括本次返回的信息已经到Master端的binlog文件的名称以及binlog的位置。
@@ -24,7 +24,7 @@ Amazon RDS 监控只读副本的复制状态，如果由于任何原因停止复
 您可通过查看 Replication Error 字段，检查 MySQL 或 MariaDB 引擎引发的关联错误的详细信息。还生成指示只读副本状态的事件，包括 RDS-EVENT-0045、RDS-EVENT-0046 和 RDS-EVENT-0047。有关这些事件和事件订阅的详细信息，请参阅 使用 Amazon RDS 事件通知。如果返回 MySQL 错误消息，则检查 MySQL 错误消息文档中的错误编号。如果返回 MariaDB 错误消息，则检查 MariaDB 错误消息文档中的错误。
 一个可导致复制出错的常见问题是只读副本的 max_allowed_packet 参数的值小于源数据库实例的 max_allowed_packet 参数的值。max_allowed_packet 参数是可在数据库参数组中进行设置的自定义参数，用于指定可在数据库上执行的最大 DML 代码大小。有时候，与源数据库实例关联的数据库参数组中的 max_allowed_packet 参数值，要小于与源的只读副本关联的数据库参数组中的 max_allowed_packet 参数值。在这些情况下，复制过程可能会引发错误 (数据包大于 'max_allowed_packet' 字节) 并停止复制。可通过让源和只读副本使用 max_allowed_packet 参数值相同的数据库参数组来纠正该错误。
 
-按照官网文档的建议尝试，发现并不是以上所说问题。必须深入分析，找到原因。
+按照官网文档的建议尝试，发现并不是以上所说问题。必须深入分析，找到原因。
 
 ### 分析
 1. 是否在延迟报警的时间点有大量的写操作
