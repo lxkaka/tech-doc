@@ -35,10 +35,10 @@ trace 是一次调用的统称（一条调用链），经过的各个服务生�
 
 ### Jaeger架构
 在 OpenTracing的实现中，[Zipkin](https://zipkin.io/?spm=a2c4e.11153940.blogcont514488.25.11b730c26MTQKS)和 [Jaeger](https://www.jaegertracing.io/docs/)是比较留下的方案。
-在 Jaeger 和 Zipkin的对比中，我认为Jaeger的优势在：
-* 更加cloud native（docker环境搭建更加方便，对kubernetes支持的更好）
-* 支持的客户端更多，并且我觉得代码（python客户端）易读和清晰
-* 组成架构更加科学（我喜欢）
+在 Jaeger 和 Zipkin的对比中，我认为Jaeger的优势在：
+* 更加cloud native（docker环境搭建更加方便，对kubernetes支持的更好）
+* 支持的客户端更多，并且我觉得代码（python客户端）易读和清晰
+* 组成架构更加科学（我喜欢）
 
 Jaeger 主要由以下几部分组成。
 
@@ -52,7 +52,7 @@ Data Store - 后端存储被设计成一个可插拔的组件，支持将数据�
 
 ### Jaeger搭建
 * 本地测试
-我们使用官方的 all-in-one image就可以运行一个完整的链路追踪系统。这种方式数据存在内存中，仅供我们用来本地开发和测试。  
+我们使用官方的 all-in-one image就可以运行一个完整的链路追踪系统。这种方式数据存在内存中，仅供我们用来本地开发和测试。  
 运行方式
 
 	```
@@ -70,7 +70,7 @@ Data Store - 后端存储被设计成一个可插拔的组件，支持将数据�
 访问  http://localhost:16686就能看到 jaeger的数据查询页
 
 * 正式环境搭建
-Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们已经有搭建好的 ES， 所以自然存储选择使用 ES.  
+Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们已经有搭建好的 ES， 所以自然存储选择使用 ES.  
  * agent   
    运行方式  
  
@@ -148,7 +148,7 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
   ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jaeger-query.png)
 
 ### Django接入
-我们开发了自己的 jaeger-python 包（huipy），可以非常简单的在 Django 项目中使用。
+我们开发了自己的 jaeger-python 包（huipy），可以非常简单的在 Django 项目中使用。
 接入方式  
 
 * 在中间件中引入
@@ -169,7 +169,7 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
     # 其他配置
     ...
     ```
-* 在发送请求时引入
+* 在发送请求时引入
 
     ```python
     from huipy.tracer.httpclient import HttpClient
@@ -178,14 +178,14 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
 
 ### 线上部署问题
 我们使用 uWSGI 作为 Django app 的容器, 默认的启动模式是 **preforking**
-在 uWSGI启动的时候，首先主进程会初始化并且load app, 然后会**fork**出指定数目的子进程。
+在 uWSGI 启动的时候，首先主进程会初始化并且load app, 然后会**fork**出指定数目的子进程。
 
 ![uwsgi_prefork](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_prefork.png)
 
 使用fork函数得到的子进程从父进程的继承了整个进程的地址空间，包括：进程上下文、进程堆栈、内存信息、打开的文件描述符、信号控制设置、进程优先级、进程组号、当前工作目录、根目录、资源限制、控制终端等。  
 这里提一下linux fork 使用的机制是 **copy-on-write**(inux系统为了提高系统性能和资源利用率，for出一个新进程时，系统并没有真正复制一个副本。如果多个进程要读取它们自己的那部分资源的副本，那么复制是不必要的。每个进程只要保存一个指向这个资源的指针就可以了。如果一个进程要修改自己的那份资源的“副本”，那么就会复制那份资源)  
 在绝大多数场景下这种方式不会有问题， 但是当主进程本身是多线程的时候可能就会造成问题。
-我们的 tracer初始化后会启动一个后台线程向agent 发送udp数据包，而这个过程在主进程load app的时候就完成了。fork子进程的时候这个后台线程当然是不会被fork的， 所以当子进程真正处理请求时，没有后台线程来发送数据。早造成的后果就是我们始终看不到我们请求的trace.
+我们的 tracer初始化后会启动一个后台线程向agent 发送udp数据包，而这个过程在主进程 load app 的时候就完成了。fork子进程的时候这个后台线程当然是不会被fork的， 所以当子进程真正处理请求时，没有后台线程来发送数据。早造成的后果就是我们始终看不到我们请求的trace.
 
 我们可以通过查看特定进程的系统调用来查看到信息：  
 首先是 **preforking**模式，我们查看某一个 uWSGI进程的调用情况
@@ -212,13 +212,13 @@ SYSCALL(args) 		 = return
  psynch_cvwait(0x105FABF80, 0xC2C01000C2D00, 0x5B700)		 = -1 Err#316
  gettimeofday(0x7000050F58E8, 0x0, 0x0)		 = 0 0
 ```
-很明显在 **lazy-apps**模式下一直有线程在监听事件，而前者没有这样的线程
+很明显在 **lazy-apps**模式下一直有线程在监听事件，而前者没有这样的线程
 
 * 解决方案
  * **lazy-apps**
    uWSGI可以使用 lazy-apps模式启动，在主进程fork子进程后，每个子进程再初始化和load app。 这样可以保证每个进程独立启动，保证了更好的的隔离性。在我们的场景中这样每个子进程会启动自己的后台线程。
    ![uwsgi_lazyapp](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_lazyapp.png)
-   这个方案的缺点是：
+   这个方案的缺点是：
    * 启动时间会稍微变长，但是有copy-on-write其实影响不大
    * 占用的内存的会变多 
 * 延迟初始化**tracer**
