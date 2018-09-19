@@ -47,7 +47,7 @@ Jaeger 主要由以下几部分组成。
 * Collector - 接收 jaeger-agent 发送来的数据，然后将数据写入后端存储。Collector 被设计成无状态的组件，因此您可以同时运行任意数量的 jaeger-collector。
 Data Store - 后端存储被设计成一个可插拔的组件，支持将数据写入 cassandra、elastic search。
 * Query - 接收查询请求，然后从后端存储系统中检索 trace 并通过 UI 进行展示。Query 是无状态的，您可以启动多个实例，把它们部署在 nginx 这样的负载均衡器后面。
-下图是 Jaeger官方文档的架构图
+下图是 Jaeger官方文档的架构图
 ![jager-archtec](http://7xorjs.com1.z0.glb.clouddn.com/jaeger-arch.png)
 
 ### Jaeger搭建
@@ -93,6 +93,7 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
 	        environment:
 	        - SPAN_STORAGE_TYPE=elasticsearch
 	    ```
+	    
 * collector 和 query       
   可以搭建在同一个实例上,运行方式
   
@@ -144,6 +145,7 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
     elastic-jaeger:
         driver: bridge
   ```
+  
   数据简单展示图例
   ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jager-show.png)
   
