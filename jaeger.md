@@ -145,8 +145,11 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
         driver: bridge
   ```
   数据简单展示图例
-  ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jaeger-query.png)
-
+  ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jager-show.png)
+  
+  链路依赖关系图
+  ![dependency](http://7xorjs.com1.z0.glb.clouddn.com/trace.png)
+  
 ### Django接入
 我们开发了自己的 jaeger-python 包（huipy），可以非常简单的在 Django 项目中使用。
 接入方式  
@@ -182,10 +185,10 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
 
 ![uwsgi_prefork](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_prefork.png)
 
-使用fork函数得到的子进程从父进程的继承了整个进程的地址空间，包括：进程上下文、进程堆栈、内存信息、打开的文件描述符、信号控制设置、进程优先级、进程组号、当前工作目录、根目录、资源限制、控制终端等。  
-这里提一下linux fork 使用的机制是 **copy-on-write**(inux系统为了提高系统性能和资源利用率，for出一个新进程时，系统并没有真正复制一个副本。如果多个进程要读取它们自己的那部分资源的副本，那么复制是不必要的。每个进程只要保存一个指向这个资源的指针就可以了。如果一个进程要修改自己的那份资源的“副本”，那么就会复制那份资源)  
-在绝大多数场景下这种方式不会有问题， 但是当主进程本身是多线程的时候可能就会造成问题。
-我们的 tracer初始化后会启动一个后台线程向agent 发送udp数据包，而这个过程在主进程 load app 的时候就完成了。fork子进程的时候这个后台线程当然是不会被fork的， 所以当子进程真正处理请求时，没有后台线程来发送数据。早造成的后果就是我们始终看不到我们请求的trace.
+使用fork函数得到的子进程从父进程的继承了整个进程的地址空间，包括：进程上下文、进程堆栈、内存信息、打开的文件描述符、信号控制设置、进程优先级、进程组号、当前工作目录、根目录、资源限制、控制终端等。    
+这里提一下linux fork 使用的机制是 **copy-on-write**(inux系统为了提高系统性能和资源利用率，for出一个新进程时，系统并没有真正复制一个副本。如果多个进程要读取它们自己的那部分资源的副本，那么复制是不必要的。每个进程只要保存一个指向这个资源的指针就可以了。如果一个进程要修改自己的那份资源的“副本”，那么就会复制那份资源)    
+在绝大多数场景下这种方式不会有问题， 但是当主进程本身是多线程的时候可能就会造成问题。   
+我们的 tracer初始化后会启动一个后台线程向agent 发送udp数据包，而这个过程在主进程 load app 的时候就完成了。fork子进程的时候这个后台线程当然是不会被fork的， 所以当子进程真正处理请求时，没有后台线程来发送数据。早造成的后果就是我们始终看不到我们请求的trace。
 
 我们可以通过查看特定进程的系统调用来查看到信息：  
 首先是 **preforking**模式，我们查看某一个 uWSGI进程的调用情况
@@ -216,7 +219,7 @@ SYSCALL(args) 		 = return
 
 * 解决方案
  * **lazy-apps**
-   uWSGI可以使用 lazy-apps模式启动，在主进程fork子进程后，每个子进程再初始化和load app。 这样可以保证每个进程独立启动，保证了更好的的隔离性。在我们的场景中这样每个子进程会启动自己的后台线程。
+   uWSGI可以使用 lazy-apps模式启动，在主进程 fork 子进程后，每个子进程再初始化和 load app。 这样可以保证每个进程独立启动，保证了更好的的隔离性。在我们的场景中这样每个子进程会启动自己的后台线程。
    ![uwsgi_lazyapp](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_lazyapp.png)
    这个方案的缺点是：
    * 启动时间会稍微变长，但是有copy-on-write其实影响不大
