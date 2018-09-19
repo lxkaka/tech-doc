@@ -222,7 +222,8 @@ SYSCALL(args) 		 = return
 * 解决方案
  * **lazy-apps**
    uWSGI可以使用 lazy-apps模式启动，在主进程 fork 子进程后，每个子进程再初始化和 load app。 这样可以保证每个进程独立启动，保证了更好的的隔离性。在我们的场景中这样每个子进程会启动自己的后台线程。
-   ![uwsgi_lazyapp](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_lazyapp.png)
+   ![uwsgi_lazyapp](http://7xorjs.com1.z0.glb.clouddn.com/uwsgi_lazyapp.png)  
+   
    这个方案的缺点是：
    * 启动时间会稍微变长，但是有copy-on-write其实影响不大
    * 占用的内存的会变多   
