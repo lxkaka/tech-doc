@@ -73,26 +73,26 @@ Data Store - 后端存储被设计成一个可插拔的组件，支持将数据�
 Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们已经有搭建好的 ES， 所以自然存储选择使用 ES.  
  * agent   
    运行方式  
- 
-	    ```
-	    version: "3"
-	
-	    services:
-	    jaeger-agent:
-	        image: jaegertracing/jaeger-agent
-	        hostname: jaeger-agent
-	        command: ["--collector.host-port=collector-host:14267"]
-	        ports:
-	        - "5775:5775/udp"
-	        - "6831:6831/udp"
-	        - "6832:6832/udp"
-	        - "5778:5778"
-	        networks:
-	        - default
-	        restart: on-failure
-	        environment:
-	        - SPAN_STORAGE_TYPE=elasticsearch
-	    ```
+   
+    ```
+    version: "3"
+
+    services:
+    jaeger-agent:
+	image: jaegertracing/jaeger-agent
+	hostname: jaeger-agent
+	command: ["--collector.host-port=collector-host:14267"]
+	ports:
+	- "5775:5775/udp"
+	- "6831:6831/udp"
+	- "6832:6832/udp"
+	- "5778:5778"
+	networks:
+	- default
+	restart: on-failure
+	environment:
+	- SPAN_STORAGE_TYPE=elasticsearch
+     ```
 	    
 * collector 和 query       
   可以搭建在同一个实例上,运行方式
@@ -147,9 +147,9 @@ Jaeger目前支持的后代存储有 Cassandra 和 Elasticsearch, 因为我们�
   ```
   
   数据简单展示图例
-  ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jager-show.png)
+  ![jaeger-query](http://7xorjs.com1.z0.glb.clouddn.com/jager-show.png)  
   
-  链路依赖关系图
+  链路依赖关系图   
   ![dependency](http://7xorjs.com1.z0.glb.clouddn.com/trace.png)
   
 ### Django接入
